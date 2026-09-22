@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LEMTIQ Admin Dashboard</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">LEMTIQ operations</p>
+          <h1>Business dashboard</h1>
+        </div>
+        <div class="timestamp">
+          <span>Snapshot</span>
+          <strong id="generated-at">Loading</strong>
+        </div>
+      </header>
+
+      <section class="metric-grid" aria-label="Business metrics">
+        <article class="metric-card primary">
+          <span>Suneyed users</span>
+          <strong id="suneyed-users">0</strong>
+          <small id="suneyed-active">0 active in 7 days</small>
+        </article>
+        <article class="metric-card">
+          <span>Sessions</span>
+          <strong id="suneyed-sessions">0</strong>
+          <small id="suneyed-pdfs">0 PDFs sent</small>
+        </article>
+        <article class="metric-card">
+          <span>Wallet cards</span>
+          <strong id="wallet-created">0</strong>
+          <small id="wallet-status">Migration pending</small>
+        </article>
+        <article class="metric-card">
+          <span>Next compliance</span>
+          <strong id="compliance-date">-</strong>
+          <small id="compliance-item">Loading</small>
+        </article>
+      </section>
+
+      <section class="layout">
+        <article class="panel">
+          <div class="panel-head">
+            <h2>Suneyed activity</h2>
+            <span id="suneyed-source">Solar8 Firestore</span>
+          </div>
+          <div class="split-stats">
+            <div>
+              <span>30-day active users</span>
+              <strong id="suneyed-active30">0</strong>
+            </div>
+            <div>
+              <span>Download only</span>
+              <strong id="suneyed-download-only">0</strong>
+            </div>
+            <div>
+              <span>Users with analysis</span>
+              <strong id="suneyed-analysis">0</strong>
+            </div>
+            <div>
+              <span>Max system size</span>
+              <strong id="suneyed-system">0 kW</strong>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <h2>Operating state</h2>
+            <span>Current focus</span>
+          </div>
+          <p id="operating-focus" class="focus-text">Loading</p>
+          <p id="approval-required" class="muted"></p>
+        </article>
+      </section>
+
+      <section class="layout wide">
+        <article class="panel">
+          <div class="panel-head">
+            <h2>Recent Suneyed activity</h2>
+            <span>Newest first</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Last activity</th>
+                  <th>Location</th>
+                  <th>Engagement</th>
+                  <th>Version</th>
+                  <th>Sessions</th>
+                  <th>System</th>
+                </tr>
+              </thead>
+              <tbody id="recent-activity"></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <h2>Top locations</h2>
+            <span>All approximate locations</span>
+          </div>
+          <div id="top-locations" class="location-list"></div>
+        </article>
+      </section>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>

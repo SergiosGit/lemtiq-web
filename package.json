@@ -1,0 +1,12 @@
+{
+  "name": "lemtiq-web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test",
+    "deploy:check": "wrangler deploy --dry-run"
+  },
+  "dependencies": { "jose": "^6.0.0" },
+  "devDependencies": { "wrangler": "^4.0.0" }
+}

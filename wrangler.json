@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "lemtiq-web",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-09-22",
+  "build": { "command": "npm run build" },
+  "assets": { "directory": "./dist", "binding": "ASSETS", "run_worker_first": true },
+  "kv_namespaces": [
+    { "binding": "DASHBOARD_DATA", "id": "dfecbfa7395a44d393fc662b8342490a" }
+  ],
+  "vars": {
+    "ACCESS_ISSUER": "https://sparkling-glitter-d6e2.cloudflareaccess.com",
+    "ACCESS_AUD": "47ffc741eccd381ca7849e7b847183afd2f3f6ee79630c7332543bee583e44fa",
+    "ADMIN_EMAIL": "weakinteraction@gmail.com"
+  }
+}
