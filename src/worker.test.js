@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { handleRequest } from "./worker.js";
-import { decodeValue } from "./refresh.js";
+import { decodeValue, RefreshError } from "./refresh.js";
 const env = {
   ASSETS: { fetch: async () => new Response("asset") },
   DASHBOARD_DATA: { get: async () => '{"generated_at":"test"}' },
@@ -20,6 +20,8 @@ test("refresh requires login and same-origin request", async () => {
   const failed = await handleRequest(valid, env, async () => true, async () => { throw new Error("private key details"); });
   assert.equal(failed.status, 502);
   assert.doesNotMatch(await failed.text(), /private key/);
+  const diagnosed = await handleRequest(valid, env, async () => true, async () => { throw new RefreshError("Firestore read failed (HTTP 403)."); });
+  assert.match((await diagnosed.json()).error, /Firestore read failed/);
 });
 test("Firestore REST values preserve numbers and event timestamps", () => {
   assert.equal(decodeValue({ integerValue: "3" }), 3);

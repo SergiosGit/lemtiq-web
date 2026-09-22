@@ -2,6 +2,8 @@ import { importPKCS8, SignJWT } from "jose";
 import { mapRows } from "./suneyed-rows.js";
 import { suneyedSummary } from "./suneyed-summary.js";
 
+export class RefreshError extends Error {}
+
 export function decodeValue(value) {
   if ("integerValue" in value) return Number(value.integerValue);
   if ("doubleValue" in value) return Number(value.doubleValue);
@@ -16,17 +18,26 @@ function decodeFields(fields = {}) {
   return Object.fromEntries(Object.entries(fields).map(([key, value]) => [key, decodeValue(value)]));
 }
 async function jsonFetch(url, options) {
-  const response = await fetch(url, { ...options, signal: AbortSignal.timeout(20000) });
-  if (!response.ok) throw new Error(`Upstream request failed (${response.status})`);
+  const host = new URL(url).hostname;
+  const stage = host === "oauth2.googleapis.com" ? "Google authentication" : host === "firestore.googleapis.com" ? "Firestore read" : "Location lookup";
+  let response;
+  try { response = await fetch(url, { ...options, signal: AbortSignal.timeout(20000) }); }
+  catch { throw new RefreshError(`${stage} timed out or could not connect.`); }
+  if (!response.ok) throw new RefreshError(`${stage} failed (HTTP ${response.status}).`);
   return response.json();
 }
 
 export async function refreshSnapshot(env) {
-  if (!env.FIREBASE_SERVICE_ACCOUNT_JSON || !env.DASHBOARD_DATA) throw new Error("Refresh is not configured");
+  if (!env.FIREBASE_SERVICE_ACCOUNT_JSON) throw new RefreshError("Firebase secret is missing from the deployed Worker.");
+  if (!env.DASHBOARD_DATA) throw new RefreshError("Dashboard storage binding is missing.");
   const previous = await env.DASHBOARD_DATA.get("dashboard", "json");
-  if (!previous) throw new Error("Initial dashboard snapshot is missing");
-  const credentials = JSON.parse(env.FIREBASE_SERVICE_ACCOUNT_JSON);
-  const key = await importPKCS8(credentials.private_key, "RS256");
+  if (!previous) throw new RefreshError("Initial dashboard snapshot is missing.");
+  let credentials, key;
+  try {
+    credentials = JSON.parse(env.FIREBASE_SERVICE_ACCOUNT_JSON);
+    if (!credentials.client_email || !credentials.project_id) throw new Error();
+    key = await importPKCS8(credentials.private_key, "RS256");
+  } catch { throw new RefreshError("Firebase secret is not valid service-account JSON with a signing key."); }
   const assertion = await new SignJWT({ scope: "https://www.googleapis.com/auth/datastore" })
     .setProtectedHeader({ alg: "RS256" }).setIssuer(credentials.client_email)
     .setAudience("https://oauth2.googleapis.com/token").setIssuedAt().setExpirationTime("5m").sign(key);
@@ -57,7 +68,7 @@ export async function refreshSnapshot(env) {
     const task = queue.then(async () => {
       const coordinate = `${Number(lat.toFixed(5))},${Number(lon.toFixed(5))}`;
       if (cache[coordinate]) return cache[coordinate];
-      if (++geocodeCount > 30) throw new Error("Geocode cache needs initialization");
+      if (++geocodeCount > 30) throw new RefreshError("Too many uncached locations. Location cache needs initialization.");
       await new Promise(resolve => setTimeout(resolve, 1100));
       const url = new URL("https://nominatim.openstreetmap.org/reverse");
       url.search = new URLSearchParams({ lat: String(lat), lon: String(lon), format: "jsonv2", zoom: "18", addressdetails: "1" });

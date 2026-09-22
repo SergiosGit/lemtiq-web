@@ -1,5 +1,5 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
-import { refreshSnapshot } from "./refresh.js";
+import { refreshSnapshot, RefreshError } from "./refresh.js";
 
 const keys = new Map();
 async function authenticate(request, env) {
@@ -43,8 +43,9 @@ export async function handleRequest(request, env, verify = authenticate, refresh
     try {
       const snapshot = await refresh(env);
       return Response.json(snapshot, { headers });
-    } catch {
-      return Response.json({ error: "Refresh failed. Existing snapshot retained. Check server configuration and retry." }, { status: 502, headers });
+    } catch (error) {
+      const detail = error instanceof RefreshError ? error.message : "Refresh failed on the server.";
+      return Response.json({ error: `${detail} Existing snapshot retained.` }, { status: 502, headers });
     }
   }
   if (!["GET", "HEAD"].includes(request.method)) return new Response("Method not allowed", { status: 405, headers });

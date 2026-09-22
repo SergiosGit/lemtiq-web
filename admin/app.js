@@ -49,10 +49,23 @@ function renderLocations(rows) {
 }
 
 async function loadDashboard() {
-  const response = await fetch("data/dashboard.json", { cache: "no-store" });
-  if (!response.ok) throw new Error("Dashboard snapshot not found.");
-  const data = await response.json();
+  const data = await requestJson("data/dashboard.json", { cache: "no-store" });
   renderDashboard(data);
+}
+
+async function requestJson(url, options) {
+  let response;
+  try { response = await fetch(url, { ...options, redirect: "manual" }); }
+  catch { throw new Error("Connection failed. Check your connection and retry."); }
+  if (response.type === "opaqueredirect" || [301, 302, 303, 307, 308, 401, 403].includes(response.status)) {
+    throw new Error("Please select Sign in to renew your access, then retry.");
+  }
+  if (!response.headers.get("Content-Type")?.includes("application/json")) {
+    throw new Error(`Server returned an unexpected response (${response.status}). Please retry.`);
+  }
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || `Refresh failed (${response.status}). Existing snapshot retained.`);
+  return data;
 }
 
 function renderDashboard(data) {
@@ -85,11 +98,10 @@ refreshButton.addEventListener("click", async () => {
   refreshButton.textContent = "Refreshing...";
   refreshStatus.textContent = "";
   try {
-    const response = await fetch("/admin/api/refresh", { method: "POST", headers: { "X-Dashboard-Refresh": "1" } });
-    if (!response.ok || !response.headers.get("Content-Type")?.includes("application/json")) throw new Error("Refresh failed. Try signing in again or retry later.");
-    renderDashboard(await response.json());
+    const data = await requestJson("/admin/api/refresh", { method: "POST", headers: { "X-Dashboard-Refresh": "1" } });
+    renderDashboard(data);
     refreshStatus.textContent = "Updated";
   } catch (error) { refreshStatus.textContent = error.message; }
   finally { refreshButton.disabled = false; refreshButton.textContent = "Refresh data"; }
 });
-loadDashboard().catch(() => { refreshStatus.textContent = "Dashboard unavailable. Try refreshing data."; });
+loadDashboard().catch(error => { refreshStatus.textContent = error.message; });
