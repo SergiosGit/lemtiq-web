@@ -1,4 +1,5 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
+import { refreshSnapshot } from "./refresh.js";
 
 const keys = new Map();
 async function authenticate(request, env) {
@@ -19,7 +20,7 @@ async function authenticate(request, env) {
   }
 }
 
-export async function handleRequest(request, env, verify = authenticate) {
+export async function handleRequest(request, env, verify = authenticate, refresh = refreshSnapshot) {
   const url = new URL(request.url);
   let pathname;
   try { pathname = decodeURIComponent(url.pathname); }
@@ -34,6 +35,17 @@ export async function handleRequest(request, env, verify = authenticate) {
   const headers = { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow" };
   if (url.hostname !== "lemtiq.com" || !(await verify(request, env))) {
     return new Response("Access denied", { status: 403, headers });
+  }
+  if (pathname === "/admin/api/refresh" && request.method === "POST") {
+    if (request.headers.get("Origin") !== url.origin || request.headers.get("X-Dashboard-Refresh") !== "1") {
+      return new Response("Access denied", { status: 403, headers });
+    }
+    try {
+      const snapshot = await refresh(env);
+      return Response.json(snapshot, { headers });
+    } catch {
+      return Response.json({ error: "Refresh failed. Existing snapshot retained. Check server configuration and retry." }, { status: 502, headers });
+    }
   }
   if (!["GET", "HEAD"].includes(request.method)) return new Response("Method not allowed", { status: 405, headers });
   if (pathname === "/admin") return new Response(null, { status: 302, headers: { ...headers, Location: "/admin/" } });

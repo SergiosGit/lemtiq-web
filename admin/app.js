@@ -1,3 +1,7 @@
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
+}
+
 function number(value) {
   return new Intl.NumberFormat("en-US").format(value || 0);
 }
@@ -23,9 +27,9 @@ function renderRecent(rows) {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${shortDate(row.timestamp)}</td>
-      <td>${row.address || "Unknown"}</td>
-      <td>${row.engagement || "Engaged"}</td>
-      <td>${row.app_version || "-"}</td>
+      <td>${escapeHtml(row.address || "Unknown")}</td>
+      <td>${escapeHtml(row.engagement || "Engaged")}</td>
+      <td>${escapeHtml(row.app_version || "-")}</td>
       <td>${number(row.session_count)}</td>
       <td>${row.system_kw ? `${row.system_kw.toFixed(1)} kW` : "-"}</td>
     `;
@@ -39,7 +43,7 @@ function renderLocations(rows) {
   for (const row of rows) {
     const item = document.createElement("div");
     item.className = "location-item";
-    item.innerHTML = `<span>${row.location}</span><strong>${row.count}</strong>`;
+    item.innerHTML = `<span>${escapeHtml(row.location)}</span><strong>${number(row.count)}</strong>`;
     list.appendChild(item);
   }
 }
@@ -48,6 +52,10 @@ async function loadDashboard() {
   const response = await fetch("data/dashboard.json", { cache: "no-store" });
   if (!response.ok) throw new Error("Dashboard snapshot not found.");
   const data = await response.json();
+  renderDashboard(data);
+}
+
+function renderDashboard(data) {
   const suneyed = data.suneyed;
 
   setText("generated-at", shortDate(data.generated_at));
@@ -70,6 +78,18 @@ async function loadDashboard() {
   renderLocations(suneyed.top_locations);
 }
 
-loadDashboard().catch((error) => {
-  document.body.innerHTML = `<main class="shell"><section class="panel"><h1>Dashboard unavailable</h1><p>${error.message}</p></section></main>`;
+const refreshButton = document.getElementById("refresh-data");
+const refreshStatus = document.getElementById("refresh-status");
+refreshButton.addEventListener("click", async () => {
+  refreshButton.disabled = true;
+  refreshButton.textContent = "Refreshing...";
+  refreshStatus.textContent = "";
+  try {
+    const response = await fetch("/admin/api/refresh", { method: "POST", headers: { "X-Dashboard-Refresh": "1" } });
+    if (!response.ok || !response.headers.get("Content-Type")?.includes("application/json")) throw new Error("Refresh failed. Try signing in again or retry later.");
+    renderDashboard(await response.json());
+    refreshStatus.textContent = "Updated";
+  } catch (error) { refreshStatus.textContent = error.message; }
+  finally { refreshButton.disabled = false; refreshButton.textContent = "Refresh data"; }
 });
+loadDashboard().catch(() => { refreshStatus.textContent = "Dashboard unavailable. Try refreshing data."; });
