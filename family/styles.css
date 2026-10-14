@@ -301,7 +301,7 @@ h3 {
   border: 2px solid var(--accent);
 }
 
-/* Gantt chart: positions are percentages of the 366-day window. */
+/* Gantt chart: positions are percentages of the rolling window (WINDOW_MONTHS in app.js). */
 .gantt-wrap {
   max-width: 100%;
   overflow-x: auto;
@@ -310,7 +310,7 @@ h3 {
 }
 
 .gantt {
-  min-width: 860px;
+  min-width: 1000px;
 }
 
 .g-row {

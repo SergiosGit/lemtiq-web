@@ -1,5 +1,5 @@
 const DAY = 86400000;
-const DAYS = 366;
+const WINDOW_MONTHS = 15;
 const COLORS = ["#4f46e5", "#0f766e", "#b45309", "#be123c", "#7c3aed", "#0369a1"];
 const MIN_LENGTHS = [1, 2, 3, 4, 5, 7, 10, 14];
 
@@ -29,6 +29,11 @@ function localToday() {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 const START = dayNum(localToday());
+const DAYS = (() => {
+  const end = new Date(`${localToday()}T00:00:00Z`);
+  end.setUTCMonth(end.getUTCMonth() + WINDOW_MONTHS);
+  return dayNum(end.toISOString().slice(0, 10)) - START + 1;
+})();
 const index = iso => dayNum(iso) - START;
 const pct = days => `${(days / DAYS) * 100}%`;
 

@@ -89,11 +89,12 @@ test("invalid dates, kinds and links are rejected", async () => {
     { start: day(12), end: day(10), kind: "hard" },
     { start: "2026-02-30", end: "2026-03-01", kind: "hard" },
     { start: day(-30), end: day(-20), kind: "hard" },
-    { start: day(400), end: day(401), kind: "hard" },
+    { start: day(470), end: day(471), kind: "hard" },
     { start: day(10), end: day(12), kind: "maybe" },
   ]) {
     assert.equal((await call(env, "bea@example.com", "/family/api/blocks", "POST", block)).status, 400, JSON.stringify(block));
   }
+  assert.equal((await call(env, "bea@example.com", "/family/api/blocks", "POST", { start: day(440), end: day(445), kind: "hard" })).status, 200);
   const bad = await call(env, "bea@example.com", "/family/api/proposals", "POST", { title: "X", url: "javascript:alert(1)" });
   assert.equal(bad.status, 400);
   assert.equal((await call(env, "bea@example.com", "/family/api/proposals", "POST", { title: "  " })).status, 400);

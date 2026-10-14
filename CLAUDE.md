@@ -32,7 +32,7 @@ The private/admin preview lives in:
 
 ### Family reunion planner (`/family/`)
 
-Private planner for six family parties: unavailability Gantt chart (rolling 12 months, "everyone free" windows) and location proposals with comments and 👍 reactions. Self-contained so it can migrate later:
+Private planner for six family parties: unavailability Gantt chart (rolling 15 months, `WINDOW_MONTHS` in `family/app.js` and `src/family/handler.js`, "everyone free" windows) and location proposals with comments and 👍 reactions. Self-contained so it can migrate later:
 
 - **`family/`** — Static page (`index.html`, `app.js`, `i18n.js` EN/DE, `styles.css`), allowlisted in `scripts/build.mjs`.
 - **`src/family/handler.js`** — Auth gate and JSON API under `/family/api/`; each party edits only their own entries; the chosen date is `ADMIN_EMAIL` only. Writes need same-origin `Origin` plus `X-Family-Request: 1`.

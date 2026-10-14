@@ -2,6 +2,7 @@
 const headers = { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow" };
 const DAY = 86400000;
 const MAX_BODY = 8000;
+const WINDOW_MONTHS = 15;
 
 export class HttpError extends Error {
   constructor(status, message) { super(message); this.status = status; }
@@ -174,16 +175,22 @@ function isoDate(value) {
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value ? value : null;
 }
 
+function addMonths(iso, months) {
+  const date = new Date(`${iso}T00:00:00Z`);
+  date.setUTCMonth(date.getUTCMonth() + months);
+  return date.toISOString().slice(0, 10);
+}
+
 function addDays(iso, days) {
   return new Date(Date.parse(`${iso}T00:00:00Z`) + days * DAY).toISOString().slice(0, 10);
 }
 
-// Rolling 12-month window; one day of slack either side covers viewer time zones.
+// Rolling WINDOW_MONTHS window; one day of slack either side covers viewer time zones.
 export function dateRange(body, now) {
   const start = isoDate(body.start), end = isoDate(body.end);
   if (!start || !end || start > end) throw new HttpError(400, "Invalid dates.");
   const today = now.toISOString().slice(0, 10);
-  if (end < addDays(today, -1) || start > addDays(today, 366)) throw new HttpError(400, "Dates must fall within the next 12 months.");
+  if (end < addDays(today, -1) || start > addDays(addMonths(today, WINDOW_MONTHS), 1)) throw new HttpError(400, `Dates must fall within the next ${WINDOW_MONTHS} months.`);
   return { start, end };
 }
 
