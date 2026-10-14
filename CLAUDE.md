@@ -30,6 +30,16 @@ The private/admin preview lives in:
 - **`admin/styles.css`** — Dashboard styling.
 - **`admin/data/dashboard.json`** — Generated dashboard snapshot, refreshed from `../dashboard/scripts/build_snapshot.mjs` in the Entrepreneur workspace.
 
+### Family reunion planner (`/family/`)
+
+Private planner for six family parties: unavailability Gantt chart (rolling 12 months, "everyone free" windows) and location proposals with comments and 👍 reactions. Self-contained so it can migrate later:
+
+- **`family/`** — Static page (`index.html`, `app.js`, `i18n.js` EN/DE, `styles.css`), allowlisted in `scripts/build.mjs`.
+- **`src/family/handler.js`** — Auth gate and JSON API under `/family/api/`; each party edits only their own entries; the chosen date is `ADMIN_EMAIL` only. Writes need same-origin `Origin` plus `X-Family-Request: 1`.
+- **`src/family/schema.sql`** — D1 schema for binding `FAMILY_DB` (database `lemtiq-family`). Tests run it on `node:sqlite`.
+- **Auth** — Separate Cloudflare Access application for `lemtiq.com/family*`; its audience is var `FAMILY_ACCESS_AUD`. Worker secret `FAMILY_MEMBERS` maps email → party name and must stay out of the public repo.
+- **Local dev** — `.dev.vars` sets `FAMILY_DEV_EMAIL` and `FAMILY_MEMBERS`. The bypass only applies on `localhost`. Run `npx wrangler d1 execute lemtiq-family --local --file=src/family/schema.sql`, then `npx wrangler dev --local` (restart after `npm run build`; assets are not hot-reloaded).
+
 ### Design tokens (css/style.css)
 
 | Variable | Value | Usage |

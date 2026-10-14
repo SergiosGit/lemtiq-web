@@ -1,26 +1,41 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { refreshSnapshot, RefreshError } from "./refresh.js";
+import { handleFamily } from "./family/handler.js";
 
 const keys = new Map();
-async function authenticate(request, env) {
-  if (!env.ACCESS_ISSUER || !env.ACCESS_AUD || !env.ADMIN_EMAIL) return false;
+async function accessEmail(request, env, audience) {
+  if (!env.ACCESS_ISSUER || !audience) return null;
   const token = request.headers.get("Cf-Access-Jwt-Assertion");
-  if (!token) return false;
+  if (!token) return null;
   if (!keys.has(env.ACCESS_ISSUER)) {
     keys.set(env.ACCESS_ISSUER, createRemoteJWKSet(new URL(`${env.ACCESS_ISSUER}/cdn-cgi/access/certs`)));
   }
   try {
     const { payload } = await jwtVerify(token, keys.get(env.ACCESS_ISSUER), {
-      issuer: env.ACCESS_ISSUER, audience: env.ACCESS_AUD, algorithms: ["RS256"],
+      issuer: env.ACCESS_ISSUER, audience, algorithms: ["RS256"],
       requiredClaims: ["exp", "email"],
     });
-    return payload.email === env.ADMIN_EMAIL;
+    return typeof payload.email === "string" ? payload.email : null;
   } catch {
-    return false;
+    return null;
   }
 }
 
-export async function handleRequest(request, env, verify = authenticate, refresh = refreshSnapshot) {
+async function authenticate(request, env) {
+  if (!env.ADMIN_EMAIL) return false;
+  return (await accessEmail(request, env, env.ACCESS_AUD)) === env.ADMIN_EMAIL;
+}
+
+// The family planner has its own Access application (audience). FAMILY_DEV_EMAIL is a
+// local-only bypass from .dev.vars for `wrangler dev`; it is never set in production.
+async function familyIdentity(request, env) {
+  const { hostname } = new URL(request.url);
+  if (env.FAMILY_DEV_EMAIL && ["localhost", "127.0.0.1"].includes(hostname)) return env.FAMILY_DEV_EMAIL;
+  if (hostname !== "lemtiq.com") return null;
+  return accessEmail(request, env, env.FAMILY_ACCESS_AUD);
+}
+
+export async function handleRequest(request, env, verify = authenticate, refresh = refreshSnapshot, identify = familyIdentity) {
   const url = new URL(request.url);
   let pathname;
   try { pathname = decodeURIComponent(url.pathname); }
@@ -30,6 +45,7 @@ export async function handleRequest(request, env, verify = authenticate, refresh
     return new Response("Bad request", { status: 400 });
   }
   pathname = pathname.replace(/\/+/g, "/");
+  if (pathname === "/family" || pathname.startsWith("/family/")) return handleFamily(request, env, pathname, identify);
   const admin = pathname === "/admin" || pathname.startsWith("/admin/");
   if (!admin) return env.ASSETS.fetch(request);
   const headers = { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow" };

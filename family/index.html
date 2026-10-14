@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Family Reunion</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow" data-i18n="eyebrow">Family reunion</p>
+          <h1 data-i18n="title">Planning our reunion</h1>
+        </div>
+        <div class="who">
+          <span id="signed-in"></span>
+          <button id="lang" type="button" class="link-button" data-i18n="langSwitch">Deutsch</button>
+          <a href="/cdn-cgi/access/logout" data-i18n="signOut">Sign out</a>
+        </div>
+      </header>
+
+      <p id="status" class="status" role="status" aria-live="polite">Loading…</p>
+
+      <section id="chosen-banner" class="banner" hidden>
+        <div>
+          <span data-i18n="chosenTitle">We're meeting</span>
+          <strong id="chosen-text"></strong>
+        </div>
+        <div class="banner-actions">
+          <button id="ics" type="button" data-i18n="addToCalendar">Add to calendar</button>
+          <button id="edit-chosen" type="button" class="secondary" data-i18n="change" hidden>Change</button>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="avail-title">
+        <div class="panel-head">
+          <h2 id="avail-title" data-i18n="availTitle">When can't you make it?</h2>
+          <div class="panel-actions">
+            <button id="set-chosen" type="button" class="secondary" data-i18n="setChosen" hidden>Set chosen dates</button>
+            <button id="add-block" type="button" data-i18n="addDates">+ Add dates</button>
+          </div>
+        </div>
+        <p class="hint" data-i18n="availHint"></p>
+        <div class="controls">
+          <label>
+            <span data-i18n="minLength">Minimum free stretch</span>
+            <select id="min-length"></select>
+          </label>
+          <label class="check">
+            <input id="count-soft" type="checkbox" />
+            <span data-i18n="countSoft">Treat “rather not” as unavailable</span>
+          </label>
+        </div>
+        <ul class="legend">
+          <li><i class="swatch hard"></i><span data-i18n="legendHard">Not possible</span></li>
+          <li><i class="swatch soft"></i><span data-i18n="legendSoft">Rather not</span></li>
+          <li><i class="swatch free"></i><span data-i18n="legendFree">Everyone free</span></li>
+          <li><i class="swatch chosen"></i><span data-i18n="legendChosen">Chosen dates</span></li>
+        </ul>
+        <div class="gantt-wrap">
+          <div id="gantt" class="gantt"></div>
+        </div>
+        <h3 data-i18n="freeTitle">Windows when everyone is free</h3>
+        <ul id="free-list" class="free-list"></ul>
+      </section>
+
+      <section class="panel" aria-labelledby="loc-title">
+        <div class="panel-head">
+          <h2 id="loc-title" data-i18n="locTitle">Where should we meet?</h2>
+        </div>
+        <p class="hint" data-i18n="locHint"></p>
+        <form id="proposal-form" class="proposal-form">
+          <label><span data-i18n="propTitle">Place or idea</span><input name="title" required maxlength="120" /></label>
+          <label><span data-i18n="propUrl">Link (optional)</span><input name="url" type="url" maxlength="500" placeholder="https://" /></label>
+          <label><span data-i18n="propCost">Rough cost (optional)</span><input name="cost_hint" maxlength="120" /></label>
+          <label class="wide"><span data-i18n="propDesc">Why this place? (optional)</span><textarea name="description" rows="2" maxlength="2000"></textarea></label>
+          <div class="wide"><button type="submit" data-i18n="propSubmit">Post proposal</button></div>
+        </form>
+        <div id="proposals" class="proposals"></div>
+      </section>
+    </main>
+
+    <dialog id="block-dialog">
+      <form id="block-form" method="dialog">
+        <h2 id="block-dialog-title"></h2>
+        <div class="row">
+          <label><span data-i18n="start">From</span><input name="start" type="date" required /></label>
+          <label><span data-i18n="end">To (inclusive)</span><input name="end" type="date" required /></label>
+        </div>
+        <fieldset>
+          <legend data-i18n="kind">How firm?</legend>
+          <label class="check"><input type="radio" name="kind" value="hard" checked /><span data-i18n="kindHard">Not possible</span></label>
+          <label class="check"><input type="radio" name="kind" value="soft" /><span data-i18n="kindSoft">Rather not</span></label>
+        </fieldset>
+        <label><span data-i18n="note">Note (optional, visible to everyone)</span><input name="note" maxlength="200" /></label>
+        <p class="dialog-error" role="alert"></p>
+        <div class="dialog-actions">
+          <button id="block-delete" type="button" class="danger" data-i18n="delete">Delete</button>
+          <span class="spacer"></span>
+          <button type="button" class="secondary" data-close data-i18n="cancel">Cancel</button>
+          <button type="submit" value="save" data-i18n="save">Save</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="chosen-dialog">
+      <form id="chosen-form" method="dialog">
+        <h2 data-i18n="chosenDialog">Chosen reunion dates</h2>
+        <div class="row">
+          <label><span data-i18n="start">From</span><input name="start" type="date" required /></label>
+          <label><span data-i18n="end">To (inclusive)</span><input name="end" type="date" required /></label>
+        </div>
+        <label><span data-i18n="chosenLabel">Title (optional)</span><input name="label" maxlength="120" /></label>
+        <p class="dialog-error" role="alert"></p>
+        <div class="dialog-actions">
+          <button id="chosen-clear" type="button" class="danger" data-i18n="clearChosen">Clear</button>
+          <span class="spacer"></span>
+          <button type="button" class="secondary" data-close data-i18n="cancel">Cancel</button>
+          <button type="submit" value="save" data-i18n="save">Save</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="i18n.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
